@@ -13,6 +13,43 @@ const router = createRouter({
       name: 'register',
       component: () => import('@/pages/register/index.vue'),
     },
+    {
+      path: '/',
+      component: () => import('@/components/MainLayout.vue'),
+      redirect: '/dashboard',
+      children: [
+        {
+          path: 'dashboard',
+          name: 'dashboard',
+          component: () => import('@/pages/dashboard/index.vue'),
+        },
+        {
+          path: 'positions',
+          name: 'positions',
+          component: () => import('@/pages/positions/index.vue'),
+        },
+        {
+          path: 'candidates',
+          name: 'candidates',
+          component: () => import('@/pages/candidates/index.vue'),
+        },
+        {
+          path: 'employees',
+          name: 'employees',
+          component: () => import('@/pages/employees/index.vue'),
+        },
+        {
+          path: 'hr-management',
+          name: 'hr-management',
+          component: () => import('@/pages/hr-management/index.vue'),
+        },
+        {
+          path: 'settings',
+          name: 'settings',
+          component: () => import('@/pages/settings/index.vue'),
+        },
+      ],
+    },
   ],
 })
 
