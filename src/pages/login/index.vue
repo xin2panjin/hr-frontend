@@ -45,6 +45,8 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import AuthLayout from '@/components/AuthLayout.vue'
+import { login, type LoginData } from '@/apis/user_api'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const ruleFormRef = ref<FormInstance>()
@@ -67,6 +69,25 @@ const rules = reactive<FormRules<typeof ruleForm>>({
 
 async function submitForm(formEl: FormInstance | undefined) {
   if (!formEl) return
-  await formEl.validate(async (valid) => {})
+  await formEl.validate(async (valid) => {
+    if (valid) {
+      try {
+        // 执行登录请求
+        const res = await login(ruleForm as LoginData)
+        // 如果上面的网络请求的状态为非200，就会走到catch块中，所以这里不需要再判断状态码了
+        const user = res.user
+        const accessToken = res.access_token
+        // 将用户信息和访问令牌存储到 Pinia 中
+        const userStore = useUserStore()
+        userStore.login(user, accessToken)
+        ElMessage.success('登录成功')
+        router.push('/')
+      } catch (error) {
+        ElMessage.error('登录失败，请检查您的邮箱和密码！')
+      }
+    } else {
+      ElMessage.error('请修正表单中的错误')
+    }
+  })
 }
 </script>
