@@ -43,6 +43,15 @@ export interface DepartmentListResponse {
   departments: Department[] | null
 }
 
+export interface AssignDepartmentsSchema {
+  hr_id: string
+  department_ids: string[]
+}
+
+export interface HrListResponse {
+  hrs: User[] | null
+}
+
 export function login(data: LoginData) {
   return request.post<LoginResponse>('/user/login/', data)
 }
@@ -74,4 +83,12 @@ export const getDingtalkStatus = () => {
       union_id: string
     }
   }>('/user/dingtalk/account')
+}
+
+export const assignDepartments = (data: AssignDepartmentsSchema) => {
+  return request.post('/user/assign/department', data)
+}
+
+export const getHRList = () => {
+  return request.get<HrListResponse>('/user/hr/list')
 }
