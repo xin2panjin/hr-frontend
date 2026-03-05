@@ -70,9 +70,9 @@
         <el-descriptions-item v-if="selectedCandidate.creator" label="推荐人">{{
           selectedCandidate.creator.realname
         }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{
+        <!-- <el-descriptions-item label="创建时间">{{
           selectedCandidate.created_at
-        }}</el-descriptions-item>
+        }}</el-descriptions-item> -->
         <el-descriptions-item label="工作经历" :span="2">{{
           selectedCandidate.work_experience || '-'
         }}</el-descriptions-item>
