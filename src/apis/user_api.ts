@@ -53,7 +53,7 @@ export interface HrListResponse {
 }
 
 export function login(data: LoginData) {
-  return request.post<LoginResponse>('/user/login/', data)
+  return request.post<LoginResponse>('/user/login', data)
 }
 
 export function register(data: RegisterData) {
