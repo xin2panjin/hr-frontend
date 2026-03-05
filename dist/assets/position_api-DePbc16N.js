@@ -1,1 +1,0 @@
-import{h as t}from"./request-MSUYPS2A.js";var o=(e=>(e.DaZhuan="大专",e.BenKe="本科",e.ShuoShi="硕士",e.BoShi="博士",e.WeiZhi="未知",e))(o||{});const i=e=>t.post("/position/create",e),r=e=>t.get("/position/list",{params:e}),h=e=>t.delete(`/position/delete/${e}`);export{o as E,i as c,h as d,r as g};
