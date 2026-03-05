@@ -1,0 +1,1 @@
+import{h as s}from"./request-QAr8daaS.js";function r(t){return s.post("/user/login/",t)}function n(t){return s.post("/user/register/",t)}const i=t=>s.post("/user/invite",t),o=t=>s.get("/user/list",t),u=()=>s.get("/user/department/list"),a=t=>s.post("/user/assign/department",t),g=()=>s.get("/user/hr/list");export{u as a,g as b,a as c,o as g,i,r as l,n as r};
