@@ -57,7 +57,7 @@ export function login(data: LoginData) {
 }
 
 export function register(data: RegisterData) {
-  return request.post<ResponseSchema>('/user/register/', data)
+  return request.post<ResponseSchema>('/user/register', data)
 }
 
 export const inviteUser = (data: UserInviteSchema) => {
