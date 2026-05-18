@@ -73,7 +73,7 @@ export const getAllDepartments = () => {
 }
 
 export const getDingtalkAuthorizeUrl = () => {
-  return request.get<{ authorization_url: string }>('/user/dingtalk/authorize')
+  return request.get<{ authorize_url: string }>('/user/dingtalk/authorize')
 }
 
 export const getDingtalkStatus = () => {
