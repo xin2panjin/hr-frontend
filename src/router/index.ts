@@ -34,6 +34,11 @@ const router = createRouter({
           component: () => import('@/pages/candidates/index.vue'),
         },
         {
+          path: 'hr-assistant',
+          name: 'hr-assistant',
+          component: () => import('@/pages/hr-assistant/index.vue'),
+        },
+        {
           path: 'candidates/add',
           name: 'candidates-add',
           component: () => import('@/pages/candidates/add.vue'),

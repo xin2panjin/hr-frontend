@@ -36,6 +36,15 @@
           </li>
           <li>
             <router-link
+              to="/hr-assistant"
+              class="flex items-center gap-3 py-3 px-4 rounded text-gray-600"
+            >
+              <el-icon><ChatDotRound /></el-icon>
+              <span>HR助手</span>
+            </router-link>
+          </li>
+          <li>
+            <router-link
               to="/employees"
               class="flex items-center gap-3 py-3 px-4 rounded text-gray-600"
             >
@@ -103,6 +112,7 @@ import {
   User,
   UserFilled,
   OfficeBuilding,
+  ChatDotRound,
   ArrowDown,
   Setting,
   SwitchButton,
