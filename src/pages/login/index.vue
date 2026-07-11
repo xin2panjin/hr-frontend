@@ -1,5 +1,5 @@
 <template>
-  <AuthLayout title="知了智能招聘系统" subtitle="登录您的账户">
+  <AuthLayout title="AI智能招聘系统" subtitle="登录您的账户">
     <el-form
       ref="ruleFormRef"
       :model="ruleForm"

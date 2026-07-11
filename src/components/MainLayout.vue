@@ -3,7 +3,7 @@
     <!-- Side Navigation Menu -->
     <aside class="w-64 bg-white text-gray-800 flex flex-col border-r border-gray-200">
       <div class="p-4 text-xl font-bold h-16 flex items-center border-b border-gray-200">
-        知了智能招聘系统
+        AI智能招聘系统
       </div>
       <nav class="flex-1 p-4">
         <ul>
