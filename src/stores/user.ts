@@ -51,6 +51,10 @@ export const useUserStore = defineStore('user', {
     isSuperUser(): boolean {
       return this.user?.is_superuser || false
     },
+    /** 招聘助手只向 HR 和超级管理员展示，后端仍会进行同样的权限校验。 */
+    canUseHRAssistant(): boolean {
+      return this.isHr || this.isSuperUser
+    },
   },
 
   actions: {

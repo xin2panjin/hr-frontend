@@ -34,7 +34,7 @@
               <span>候选人管理</span>
             </router-link>
           </li>
-          <li>
+          <li v-if="userStore.canUseHRAssistant">
             <router-link
               to="/hr-assistant"
               class="flex items-center gap-3 py-3 px-4 rounded text-gray-600"

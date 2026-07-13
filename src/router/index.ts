@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -37,6 +38,7 @@ const router = createRouter({
           path: 'hr-assistant',
           name: 'hr-assistant',
           component: () => import('@/pages/hr-assistant/index.vue'),
+          meta: { requiresHRAssistantAccess: true },
         },
         {
           path: 'candidates/add',
@@ -61,6 +63,20 @@ const router = createRouter({
       ],
     },
   ],
+})
+
+router.beforeEach((to) => {
+  // 菜单隐藏只改善体验；路由守卫可防止用户手工输入地址直接进入页面。
+  if (!to.matched.some((record) => record.meta.requiresHRAssistantAccess)) {
+    return true
+  }
+
+  const userStore = useUserStore()
+  if (userStore.canUseHRAssistant) {
+    return true
+  }
+
+  return { name: 'dashboard' }
 })
 
 export default router
