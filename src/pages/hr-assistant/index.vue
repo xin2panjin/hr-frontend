@@ -266,7 +266,7 @@
 
       <div v-if="loading" class="flex justify-start">
         <div class="bg-white text-gray-500 border border-gray-200 rounded-lg px-4 py-3">
-          正在思考中...
+          {{ streamStatus || '正在思考中...' }}
         </div>
       </div>
 
@@ -310,7 +310,7 @@ import {
   deleteHRAssistantConversation,
   getHRAssistantConversations,
   getHRAssistantMessages,
-  sendHRAssistantMessage,
+  streamHRAssistantMessage,
   updateHRAssistantConversation,
 } from '@/apis/hr_assistant_api'
 import type {
@@ -318,6 +318,7 @@ import type {
   HRAssistantCandidateAction,
   HRAssistantCandidateCard,
   HRAssistantConversation,
+  HRAssistantStreamEvent,
 } from '@/apis/hr_assistant_api'
 
 type ChatRole = 'user' | 'assistant'
@@ -332,6 +333,7 @@ interface ChatMessage {
 const messages = ref<ChatMessage[]>([])
 const inputMessage = ref('')
 const loading = ref(false)
+const streamStatus = ref('')
 const conversations = ref<HRAssistantConversation[]>([])
 const conversationId = ref<string | null>(localStorage.getItem('hrAssistantConversationId'))
 const loadingConversations = ref(false)
@@ -730,28 +732,88 @@ const sendMessage = async (specifiedContent?: string) => {
     inputMessage.value = ''
   }
   loading.value = true
+  streamStatus.value = '正在连接招聘助手...'
   await scrollToBottom()
 
   try {
-    const response = await sendHRAssistantMessage(conversationId.value!, content)
+    let streamedMessageId: string | null = null
+    let streamFailed = false
 
-    messages.value.push({
-      id: response.message_id,
-      role: 'assistant',
-      content: response.answer || '助手没有返回内容。',
-      artifacts: response.artifacts || [],
+    const getStreamedMessage = () => {
+      if (!streamedMessageId) {
+        streamedMessageId = createMessageId()
+        messages.value.push({
+          id: streamedMessageId,
+          role: 'assistant',
+          content: '',
+          artifacts: [],
+        })
+      }
+      return messages.value.find((message) => message.id === streamedMessageId)
+    }
+
+    await streamHRAssistantMessage(conversationId.value!, content, async (event: HRAssistantStreamEvent) => {
+      const streamedMessage = getStreamedMessage()
+      if (event.event === 'message_start') {
+        streamStatus.value = '正在思考中...'
+        return
+      }
+
+      if (event.event === 'content_delta') {
+        const delta = typeof event.data.content === 'string' ? event.data.content : ''
+        if (streamedMessage && delta) {
+          streamedMessage.content += delta
+          await scrollToBottom()
+        }
+        return
+      }
+
+      if (event.event === 'tool_start' || event.event === 'tool_end') {
+        streamStatus.value = typeof event.data.display === 'string'
+          ? event.data.display
+          : '正在处理请求...'
+        return
+      }
+
+      if (event.event === 'message_end') {
+        if (streamedMessage) {
+          streamedMessage.id = typeof event.data.message_id === 'string'
+            ? event.data.message_id
+            : streamedMessage.id
+          streamedMessage.content = typeof event.data.answer === 'string'
+            ? event.data.answer || streamedMessage.content
+            : streamedMessage.content
+          streamedMessage.artifacts = Array.isArray(event.data.artifacts)
+            ? event.data.artifacts as HRAssistantArtifact[]
+            : []
+        }
+        streamStatus.value = ''
+        return
+      }
+
+      if (event.event === 'error') {
+        streamFailed = true
+        streamStatus.value = ''
+        if (streamedMessageId) {
+          messages.value = messages.value.filter((message) => message.id !== streamedMessageId)
+        }
+        ElMessage.error(
+          typeof event.data.message === 'string'
+            ? event.data.message
+            : '招聘助手暂时无法完成本次请求，请稍后重试。',
+        )
+      }
     })
-    await loadConversations()
+
+    if (!streamFailed) {
+      await loadConversations()
+    }
   } catch (error) {
     console.error(error)
     ElMessage.error(getErrorMessage(error))
-    messages.value.push({
-      id: createMessageId(),
-      role: 'assistant',
-      content: '请求失败了。请确认后端服务、登录状态和 Milvus 数据是否正常。',
-    })
   } finally {
     loading.value = false
+    streamStatus.value = ''
     await scrollToBottom()
   }
 }

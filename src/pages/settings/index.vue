@@ -52,7 +52,11 @@ const fetchStatus = async () => {
   errorMsg.value = ''
   try {
     const resp = await getDingtalkStatus()
-    statusResp.value = resp
+    // 后端只返回钉钉账号信息；页面展示状态由是否存在绑定账号推导。
+    statusResp.value = {
+      is_linked: Boolean(resp.dingding_user),
+      dingding_user: resp.dingding_user,
+    }
   } catch (e: any) {
     errorMsg.value = e?.message || '获取钉钉绑定状态失败'
   } finally {
