@@ -1,46 +1,66 @@
 <template>
-  <div class="p-4 space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold">Dashboard</h1>
-        <p class="text-sm text-gray-500">近 7 天趋势 + 职位/候选人指标</p>
-      </div>
-      <button
-        class="px-3 py-2 rounded border text-sm hover:bg-gray-50"
-        :disabled="loading"
-        @click="refresh"
-      >
-        刷新
-      </button>
-    </div>
-
-    <div v-if="error" class="p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
+  <div class="page-shell">
+    <div
+      v-if="error"
+      class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
       {{ error }}
     </div>
 
-    <div
-      class="p-5 rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 shadow-sm ring-1 ring-slate-200/70"
-    >
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="text-base font-semibold text-slate-800">近 7 天新增候选人</div>
-          <div class="mt-1 text-xs text-slate-500">候选人数量趋势</div>
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-slate-500">7 天新增</span>
+          <span class="icon-tile"
+            ><el-icon><User /></el-icon
+          ></span>
         </div>
-        <div v-if="loading" class="text-xs text-slate-400">加载中…</div>
+        <div class="mt-3 text-3xl font-semibold text-slate-950">{{ totalCandidates7d }}</div>
       </div>
-      <div
-        ref="chartEl"
-        class="mt-4 w-full rounded-xl bg-white/70 backdrop-blur-sm"
-        style="height: 320px"
-      ></div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-slate-500">日均新增</span>
+          <span class="icon-tile"
+            ><el-icon><TrendCharts /></el-icon
+          ></span>
+        </div>
+        <div class="mt-3 text-3xl font-semibold text-slate-950">{{ averageCandidates }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-slate-500">单日峰值</span>
+          <span class="icon-tile"
+            ><el-icon><DataLine /></el-icon
+          ></span>
+        </div>
+        <div class="mt-3 text-3xl font-semibold text-slate-950">{{ maxCandidates }}</div>
+      </div>
+    </div>
+
+    <div class="surface">
+      <div class="surface-header">
+        <div>
+          <div class="surface-title">近 7 天新增候选人</div>
+          <div class="surface-subtitle">按日期统计候选人入库数量</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <el-tag v-if="loading" type="info" effect="plain">加载中</el-tag>
+          <el-button size="small" :loading="loading" @click="refresh">
+            <el-icon><Refresh /></el-icon>
+            刷新
+          </el-button>
+        </div>
+      </div>
+      <div ref="chartEl" class="h-[360px] w-full px-4 py-4" style="height: 320px"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
 import { getLatest7DaysCandidates } from '@/apis/dashboard_api'
+import { DataLine, Refresh, TrendCharts, User } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -50,6 +70,19 @@ let chart: echarts.ECharts | null = null
 
 const chartDays = ref<string[]>([])
 const chartCounts = ref<number[]>([])
+
+const totalCandidates7d = computed(() => {
+  return chartCounts.value.reduce((sum, count) => sum + count, 0)
+})
+
+const averageCandidates = computed(() => {
+  if (chartCounts.value.length === 0) return 0
+  return Math.round((totalCandidates7d.value / chartCounts.value.length) * 10) / 10
+})
+
+const maxCandidates = computed(() => {
+  return Math.max(0, ...chartCounts.value)
+})
 
 const renderChart = () => {
   if (!chartEl.value) return
@@ -124,12 +157,12 @@ const renderChart = () => {
         showSymbol: false,
         lineStyle: {
           width: 3,
-          color: '#4F46E5',
-          shadowColor: 'rgba(79, 70, 229, 0.28)',
+          color: '#2563EB',
+          shadowColor: 'rgba(37, 99, 235, 0.22)',
           shadowBlur: 8,
         },
         itemStyle: {
-          color: '#4F46E5',
+          color: '#2563EB',
         },
         emphasis: {
           focus: 'series',
@@ -140,8 +173,8 @@ const renderChart = () => {
         },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(79, 70, 229, 0.25)' },
-            { offset: 1, color: 'rgba(79, 70, 229, 0.02)' },
+            { offset: 0, color: 'rgba(37, 99, 235, 0.2)' },
+            { offset: 1, color: 'rgba(37, 99, 235, 0.02)' },
           ]),
         },
       },

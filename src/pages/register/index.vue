@@ -18,8 +18,8 @@
         </div>
       </el-form-item>
 
-      <el-form-item label="用户名" prop="username">
-        <el-input v-model="ruleForm.username" size="large" placeholder="请输入用户名" />
+      <el-form-item label="用户名（管理员指定）" prop="username">
+        <el-input v-model="ruleForm.username" size="large" placeholder="请输入邀请邮件中的用户名" />
       </el-form-item>
 
       <el-form-item label="真实姓名" prop="realname">
@@ -31,7 +31,7 @@
           v-model="ruleForm.password"
           type="password"
           size="large"
-          placeholder="请输入密码"
+          placeholder="至少 12 位，含大小写、数字和特殊字符"
           show-password
         />
       </el-form-item>
@@ -51,10 +51,10 @@
       </div>
     </el-form>
 
-    <p class="mt-10 text-center text-sm text-gray-500">
+    <p class="mt-8 text-center text-sm text-slate-500">
       已有账户?
       {{ ' ' }}
-      <router-link to="/login" class="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+      <router-link to="/login" class="font-semibold leading-6 text-blue-600 hover:text-blue-700"
         >立即登录</router-link
       >
     </p>
@@ -91,6 +91,16 @@ const validatePass = (rule: any, value: any, callback: any) => {
   }
 }
 
+const validatePasswordPolicy = (rule: any, value: string, callback: any) => {
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{12,128}$/.test(value)) {
+    callback(new Error('密码至少 12 位，且须含大小写字母、数字和特殊字符'))
+  } else if (ruleForm.username && value.toLocaleLowerCase().includes(ruleForm.username.toLocaleLowerCase())) {
+    callback(new Error('密码不能包含用户名'))
+  } else {
+    callback()
+  }
+}
+
 const rules = reactive<FormRules<typeof ruleForm>>({
   email: [
     { required: true, message: '请输入邮箱地址', trigger: 'blur' },
@@ -107,7 +117,7 @@ const rules = reactive<FormRules<typeof ruleForm>>({
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度应为 6 到 20 个字符', trigger: 'blur' },
+    { validator: validatePasswordPolicy, trigger: ['blur', 'change'] },
   ],
   confirmPassword: [
     { required: true, message: '请输入密码', trigger: 'blur' },

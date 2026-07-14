@@ -5,8 +5,8 @@ import type { User } from '@/stores/user'
 // Enums based on API documentation
 export enum CandidateStatusEnum {
   APPLICATION = '已投递',
-  AI_FILTER_FAILED = 'AI筛选失败',
-  AI_FILTER_PASSED = 'AI筛选成功',
+  AI_FILTER_FAILED = 'AI筛选未通过',
+  AI_FILTER_PASSED = 'AI筛选通过',
   WAITING_FOR_INTERVIEW = '待面试',
   REFUSED_INTERVIEW = '拒绝面试',
   INTERVIEW_PASSED = '面试通过',
@@ -79,6 +79,9 @@ export interface Candidate {
 
 export interface CandidateListResponse {
   candidates: Candidate[]
+  total: number
+  page: number
+  size: number
 }
 
 export interface CandidateCreateData {
@@ -108,6 +111,10 @@ export interface GetCandidatesParams {
   size?: number
   position_id?: string
   status?: CandidateStatusEnum
+  keyword?: string
+  creator_id?: string
+  created_at_start?: string
+  created_at_end?: string
 }
 
 export interface CandidateAIScore {
@@ -149,7 +156,7 @@ export const createCandidate = (data: CandidateCreateData) => {
 }
 
 export const getCandidates = (params: GetCandidatesParams) => {
-  return httpRequest.get<CandidateListResponse>('/candidate/list', { params })
+  return httpRequest.get<CandidateListResponse>('/candidate/list', params)
 }
 
 export const updateCandidateStatus = (candidateId: string, data: CandidateStatusUpdateData) => {

@@ -94,10 +94,15 @@ export const createHRAssistantConversation = (title = '新对话') => {
 }
 
 /** 获取当前用户自己的会话列表。 */
-export const getHRAssistantConversations = (page = 1, size = 50) => {
+export const getHRAssistantConversations = (
+  page = 1,
+  size = 50,
+  params: { status?: HRAssistantConversationStatus; keyword?: string } = {},
+) => {
   return httpRequest.get<HRAssistantConversationListResponse>('/assistant/conversations', {
     page,
     size,
+    ...params,
   })
 }
 

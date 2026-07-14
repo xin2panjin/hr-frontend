@@ -44,6 +44,13 @@ export interface GetPositionListParams {
   page?: number
   size?: number
   department_id?: string
+  keyword?: string
+  is_open?: boolean
+  education?: EducationEnum
+  work_year_min?: number
+  work_year_max?: number
+  created_at_start?: string
+  created_at_end?: string
 }
 
 export interface PositionCreateResponse {
@@ -52,6 +59,9 @@ export interface PositionCreateResponse {
 
 export interface PositionListResponse {
   positions: Position[]
+  total: number
+  page: number
+  size: number
 }
 
 /**
@@ -69,7 +79,7 @@ export const createPosition = (data: PositionCreateData) => {
  * @returns
  */
 export const getPositionList = (params: GetPositionListParams) => {
-  return httpRequest.get<PositionListResponse>('/position/list', { params })
+  return httpRequest.get<PositionListResponse>('/position/list', params)
 }
 
 /**

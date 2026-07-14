@@ -8,8 +8,8 @@
       class="space-y-6"
       @submit.prevent="submitForm(ruleFormRef)"
     >
-      <el-form-item label="邮箱" prop="email">
-        <el-input v-model="ruleForm.email" size="large" placeholder="请输入邮箱地址" />
+      <el-form-item label="用户名或邮箱" prop="account">
+        <el-input v-model="ruleForm.account" size="large" placeholder="请输入用户名或邮箱地址" autocomplete="username" />
       </el-form-item>
 
       <el-form-item label="密码" prop="password">
@@ -27,12 +27,10 @@
       </div>
     </el-form>
 
-    <p class="mt-10 text-center text-sm text-gray-500">
+    <p class="mt-8 text-center text-sm text-slate-500">
       还没有账户?
       {{ ' ' }}
-      <router-link
-        to="/register"
-        class="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+      <router-link to="/register" class="font-semibold leading-6 text-blue-600 hover:text-blue-700"
         >立即注册</router-link
       >
     </p>
@@ -43,23 +41,24 @@
 import { reactive, ref } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AuthLayout from '@/components/AuthLayout.vue'
 import { login, type LoginData } from '@/apis/user_api'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const ruleFormRef = ref<FormInstance>()
 
 const ruleForm = reactive({
-  email: '',
+  account: '',
   password: '',
 })
 
 const rules = reactive<FormRules<typeof ruleForm>>({
-  email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] },
+  account: [
+    { required: true, message: '请输入用户名或邮箱地址', trigger: 'blur' },
+    { min: 2, max: 100, message: '用户名或邮箱长度不正确', trigger: ['blur', 'change'] },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -79,9 +78,13 @@ async function submitForm(formEl: FormInstance | undefined) {
         const accessToken = res.access_token
         // 将用户信息和访问令牌存储到 Pinia 中
         const userStore = useUserStore()
-        userStore.login(user, accessToken)
+        userStore.login(user, accessToken, res.refresh_token)
+        await userStore.refreshPrincipal()
         ElMessage.success('登录成功')
-        router.push('/')
+        const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
+          ? route.query.redirect
+          : '/'
+        router.replace(redirect)
       } catch (error) {
         ElMessage.error('登录失败，请检查您的邮箱和密码！')
       }

@@ -1,8 +1,8 @@
 import request from '@/apis/request'
-import { type User, type Department } from '@/stores/user'
+import { type User } from '@/stores/user'
 
 export interface LoginData {
-  email: string
+  account: string
   password: string
 }
 
@@ -16,40 +16,12 @@ export interface RegisterData {
 
 export interface LoginResponse {
   access_token: string
+  refresh_token: string
   user: User
 }
 
 export interface ResponseSchema {
   result: 'success' | 'fail'
-}
-
-export interface UserInviteSchema {
-  email: string
-  department_id: string | null
-}
-
-export interface GetUserListParams {
-  page: number
-  size: number
-  department_id?: string | null
-}
-
-export interface UserListResponse {
-  users: User[] | null
-  total: number
-}
-
-export interface DepartmentListResponse {
-  departments: Department[] | null
-}
-
-export interface AssignDepartmentsSchema {
-  hr_id: string
-  department_ids: string[]
-}
-
-export interface HrListResponse {
-  hrs: User[] | null
 }
 
 export function login(data: LoginData) {
@@ -58,18 +30,6 @@ export function login(data: LoginData) {
 
 export function register(data: RegisterData) {
   return request.post<ResponseSchema>('/user/register', data)
-}
-
-export const inviteUser = (data: UserInviteSchema) => {
-  return request.post('/user/invite', data)
-}
-
-export const getUserList = (params: GetUserListParams) => {
-  return request.get<UserListResponse>('/user/list', params)
-}
-
-export const getAllDepartments = () => {
-  return request.get<DepartmentListResponse>('/user/department/list')
 }
 
 export const getDingtalkAuthorizeUrl = () => {
@@ -83,12 +43,4 @@ export const getDingtalkStatus = () => {
       union_id: string
     }
   }>('/user/dingtalk/account')
-}
-
-export const assignDepartments = (data: AssignDepartmentsSchema) => {
-  return request.post('/user/assign/department', data)
-}
-
-export const getHRList = () => {
-  return request.get<HrListResponse>('/user/hr/list')
 }

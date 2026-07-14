@@ -1,53 +1,143 @@
 <template>
-  <div class="flex justify-between items-center mb-4">
-    <h1 class="text-2xl font-bold">候选人管理</h1>
-  </div>
-  <div>
-    <div class="flex justify-end mb-4">
-      <router-link to="/candidates/add">
-        <el-button type="primary">添加候选人</el-button>
-      </router-link>
+  <div class="page-shell">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-slate-500">候选人总数</span>
+          <span class="icon-tile"
+            ><el-icon><User /></el-icon
+          ></span>
+        </div>
+        <div class="mt-3 text-3xl font-semibold text-slate-950">{{ pagination.total }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-slate-500">待面试</span>
+          <span class="icon-tile"
+            ><el-icon><Calendar /></el-icon
+          ></span>
+        </div>
+        <div class="mt-3 text-3xl font-semibold text-slate-950">{{ waitingInterviewCount }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-slate-500">已入职</span>
+          <span class="icon-tile"
+            ><el-icon><CircleCheck /></el-icon
+          ></span>
+        </div>
+        <div class="mt-3 text-3xl font-semibold text-slate-950">{{ hiredCount }}</div>
+      </div>
     </div>
 
-    <div class="flex">
-      <el-table :data="candidates" style="width: 100%" border>
-        <el-table-column prop="name" label="姓名"></el-table-column>
-        <el-table-column prop="position.title" label="职位"></el-table-column>
-        <el-table-column label="性别">
+    <div class="surface">
+      <div class="surface-header">
+        <div>
+          <div class="surface-title">筛选条件</div>
+          <div class="surface-subtitle">按职位、状态、关键词和创建时间定位候选人</div>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="filter-fields">
+          <el-input
+            v-model="filters.keyword"
+            class="filter-control filter-control--wide"
+            clearable
+            placeholder="姓名、邮箱或手机号"
+            @keyup.enter="searchCandidates"
+          />
+          <el-select v-model="filters.positionId" class="filter-control filter-control--medium" clearable filterable placeholder="全部职位">
+            <el-option
+              v-for="position in positions"
+              :key="position.id"
+              :label="position.title"
+              :value="position.id"
+            />
+          </el-select>
+          <el-select v-model="filters.status" class="filter-control filter-control--short" clearable placeholder="全部状态">
+            <el-option
+              v-for="status in candidateStatusOptions"
+              :key="status"
+              :label="status"
+              :value="status"
+            />
+          </el-select>
+          <el-date-picker
+            v-model="filters.createdAtRange"
+            type="datetimerange"
+            start-placeholder="创建起始"
+            end-placeholder="创建结束"
+            class="filter-control filter-control--date"
+          />
+        </div>
+        <div class="filter-actions">
+          <el-button type="primary" @click="searchCandidates">查询</el-button>
+          <el-button @click="resetFilters">重置</el-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="surface">
+      <div class="surface-header">
+        <div>
+          <div class="surface-title">候选人列表</div>
+          <div class="surface-subtitle">共 {{ pagination.total }} 位候选人</div>
+        </div>
+        <router-link to="/candidates/add">
+          <el-button size="small" type="primary">
+            <el-icon><Plus /></el-icon>
+            添加候选人
+          </el-button>
+        </router-link>
+      </div>
+
+      <el-table v-loading="loading" :data="candidates" style="width: 100%" stripe>
+        <el-table-column prop="name" label="姓名" min-width="120">
           <template #default="scope">
-            <el-tag v-if="scope.row.gender == '男'" type="success">男</el-tag>
-            <el-tag v-else-if="scope.row.gender == '女'" type="danger">女</el-tag>
-            <el-tag v-else type="warning">未知</el-tag>
+            <div class="font-semibold text-slate-950">{{ scope.row.name || '-' }}</div>
+            <div class="mt-1 text-xs text-slate-500">{{ scope.row.email || '-' }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="email" label="邮箱"></el-table-column>
-        <el-table-column prop="phone_number" label="手机"></el-table-column>
-        <el-table-column prop="status" label="状态">
+        <el-table-column prop="position.title" label="职位" min-width="150"></el-table-column>
+        <el-table-column label="联系方式" min-width="180">
+          <template #default="scope">
+            <div>{{ scope.row.phone_number || '-' }}</div>
+            <div class="mt-1 text-xs text-slate-500">{{ scope.row.gender || '未知性别' }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" min-width="120">
           <template #default="scope">
             <el-tag :type="getStatusTagType(scope.row.status)">{{ scope.row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间"></el-table-column>
-        <el-table-column label="操作">
+        <el-table-column prop="created_at" label="创建时间" min-width="170"></el-table-column>
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
             <el-button link type="primary" @click="showDetails(scope.row)">详情</el-button>
-            <span class="ml-1"></span>
             <el-button link type="primary" @click="openStatusDialog(scope.row)">修改状态</el-button>
-            <span class="ml-1"></span>
             <el-link
               type="primary"
               :href="http.baseURL + '/media/' + scope.row.resume.file_path"
               target="_blank"
               >简历</el-link
             >
-            <span class="ml-1"></span>
             <el-button link type="primary" @click="showAIScore(scope.row)">AI评分</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <div class="flex justify-end p-4">
+        <el-pagination
+          v-model:current-page="pagination.currentPage"
+          background
+          layout="total, prev, pager, next"
+          :total="pagination.total"
+          :page-size="pagination.pageSize"
+          @current-change="fetchCandidates"
+        />
+      </div>
     </div>
 
-    <el-dialog v-model="detailsDialogVisible" title="候选人详情">
+    <el-dialog v-model="detailsDialogVisible" title="候选人详情" width="860px">
       <el-descriptions v-if="selectedCandidate" :column="2" border>
         <el-descriptions-item label="姓名">{{ selectedCandidate.name }}</el-descriptions-item>
         <el-descriptions-item label="职位">{{
@@ -99,7 +189,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="aiScoreDialogVisible" title="AI评分详情">
+    <el-dialog v-model="aiScoreDialogVisible" title="AI评分详情" width="760px">
       <div v-if="aiScore">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="综合得分">{{ aiScore.overall_score }}</el-descriptions-item>
@@ -186,8 +276,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Calendar, CircleCheck, Plus, User } from '@element-plus/icons-vue'
 import { getCandidates, getCandidateAiScore, updateCandidateStatus } from '@/apis/candidate_api'
 import type { Candidate, CandidateAIScore } from '@/apis/candidate_api'
 import { CandidateStatusEnum } from '@/apis/candidate_api'
@@ -196,6 +287,37 @@ import { getPositionList, type Position } from '@/apis/position_api'
 
 const candidates = ref<Candidate[]>([])
 const positions = ref<Position[]>([])
+const loading = ref(false)
+const candidateStatusOptions = Object.values(CandidateStatusEnum)
+
+const filters = reactive<{
+  keyword: string
+  positionId: string
+  status: CandidateStatusEnum | ''
+  createdAtRange: [Date, Date] | null
+}>({
+  keyword: '',
+  positionId: '',
+  status: '',
+  createdAtRange: null,
+})
+
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 10,
+  total: 0,
+})
+
+const waitingInterviewCount = computed(() => {
+  return candidates.value.filter(
+    (candidate) => candidate.status === CandidateStatusEnum.WAITING_FOR_INTERVIEW,
+  ).length
+})
+
+const hiredCount = computed(() => {
+  return candidates.value.filter((candidate) => candidate.status === CandidateStatusEnum.HIRED)
+    .length
+})
 
 const detailsDialogVisible = ref(false)
 const selectedCandidate = ref<Candidate | null>(null)
@@ -290,21 +412,49 @@ const submitStatus = async () => {
 }
 
 const fetchCandidates = async () => {
+  loading.value = true
   try {
-    const response = await getCandidates({})
+    const response = await getCandidates({
+      page: pagination.currentPage,
+      size: pagination.pageSize,
+      keyword: filters.keyword.trim() || undefined,
+      position_id: filters.positionId || undefined,
+      status: filters.status || undefined,
+      created_at_start: filters.createdAtRange?.[0]?.toISOString(),
+      created_at_end: filters.createdAtRange?.[1]?.toISOString(),
+    })
     candidates.value = response.candidates || []
+    pagination.total = response.total || 0
   } catch (error) {
     ElMessage.error('获取候选人列表失败')
+  } finally {
+    loading.value = false
   }
 }
 
 const fetchPositions = async () => {
   try {
-    const response = await getPositionList({})
+    const response = await getPositionList({ page: 1, size: 100 })
     positions.value = response.positions || []
   } catch (error) {
     ElMessage.error('获取职位列表失败')
   }
+}
+
+const searchCandidates = () => {
+  pagination.currentPage = 1
+  void fetchCandidates()
+}
+
+const resetFilters = () => {
+  Object.assign(filters, {
+    keyword: '',
+    positionId: '',
+    status: '',
+    createdAtRange: null,
+  })
+  pagination.currentPage = 1
+  void fetchCandidates()
 }
 
 // Map candidate status to Element Plus tag type
@@ -313,8 +463,10 @@ const getStatusTagType = (status: string): string => {
     case '已投递':
       return 'info'
     case 'AI筛选失败':
+    case 'AI筛选未通过':
       return 'danger'
     case 'AI筛选成功':
+    case 'AI筛选通过':
       return 'success'
     case '待面试':
       return 'warning'

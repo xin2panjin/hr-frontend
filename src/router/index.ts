@@ -38,7 +38,7 @@ const router = createRouter({
           path: 'hr-assistant',
           name: 'hr-assistant',
           component: () => import('@/pages/hr-assistant/index.vue'),
-          meta: { requiresHRAssistantAccess: true },
+          meta: { permissions: ['assistant.use'] },
         },
         {
           path: 'candidates/add',
@@ -46,37 +46,53 @@ const router = createRouter({
           component: () => import('@/pages/candidates/add.vue'),
         },
         {
-          path: 'employees',
-          name: 'employees',
-          component: () => import('@/pages/employees/index.vue'),
-        },
-        {
-          path: 'hr-management',
-          name: 'hr-management',
-          component: () => import('@/pages/hr-management/index.vue'),
-        },
-        {
           path: 'settings',
           name: 'settings',
           component: () => import('@/pages/settings/index.vue'),
+        },
+        {
+          path: 'iam',
+          name: 'iam',
+          component: () => import('@/pages/iam/index.vue'),
+          meta: { permissions: ['user.read', 'department.read'] },
+        },
+        {
+          path: 'iam/roles',
+          name: 'iam-roles',
+          component: () => import('@/pages/iam/roles.vue'),
+          meta: { permissions: ['role.read'] },
+        },
+        {
+          path: 'iam/roles/:roleId/permissions',
+          name: 'iam-role-permissions',
+          component: () => import('@/pages/iam/role-permissions.vue'),
+          meta: { permissions: ['role.read'] },
+        },
+        {
+          path: 'iam/roles/:roleId/permissions/edit',
+          name: 'iam-role-permissions-edit',
+          component: () => import('@/pages/iam/role-permissions.vue'),
+          meta: { permissions: ['role.update_permissions'] },
         },
       ],
     },
   ],
 })
 
-router.beforeEach((to) => {
-  // 菜单隐藏只改善体验；路由守卫可防止用户手工输入地址直接进入页面。
-  if (!to.matched.some((record) => record.meta.requiresHRAssistantAccess)) {
-    return true
-  }
-
+router.beforeEach(async (to) => {
   const userStore = useUserStore()
-  if (userStore.canUseHRAssistant) {
-    return true
+  const required = to.matched.flatMap((record) => (record.meta.permissions as string[] | undefined) || [])
+  if (
+    to.name !== 'login'
+    && to.name !== 'register'
+    && userStore.isLoggedIn
+    // 权限路由必须以本次请求的服务端主体为准。只依赖 localStorage 会出现
+    // “页面显示 A 用户、请求令牌却属于 B 用户”的身份错配。
+    && (required.length > 0 || userStore.permissions.length === 0)
+  ) {
+    try { await userStore.refreshPrincipal() } catch { userStore.logout(); return { name: 'login' } }
   }
-
-  return { name: 'dashboard' }
+  return required.every((permission) => userStore.can(permission)) ? true : { name: 'dashboard' }
 })
 
 export default router

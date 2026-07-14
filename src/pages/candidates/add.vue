@@ -1,87 +1,126 @@
 <template>
-  <div class="mb-4">
-    <div class="mb-3">
+  <div class="page-shell">
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <el-button link class="back-link" @click="goBackToCandidates">
         <el-icon><ArrowLeft /></el-icon>
         <span class="ml-1">返回列表</span>
       </el-button>
+      <el-button type="primary" :disabled="!resumeId" @click="createCandidateFunc">
+        <el-icon><Check /></el-icon>
+        创建候选人
+      </el-button>
     </div>
-    <h1 class="text-2xl font-bold">添加候选人</h1>
-  </div>
-  <div>
-    <div class="content-area">
-      <div class="pdf-viewer">
-        <el-upload
-          v-if="!resumeUrl"
-          name="resume_file"
-          class="upload-demo"
-          drag
-          :http-request="handleUploadResume"
-          :show-file-list="false"
-          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-        >
-          <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-          <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-          <template #tip>
-            <div class="el-upload__tip">支持 pdf/doc/docx/png/jpg/jpeg 格式</div>
-          </template>
-        </el-upload>
-        <embed v-else :src="resumeUrl" type="application/pdf" width="100%" height="100%" />
+
+    <div class="grid min-h-0 gap-5 xl:grid-cols-[minmax(420px,0.95fr)_minmax(520px,1.05fr)]">
+      <div class="surface overflow-hidden">
+        <div class="surface-header">
+          <div>
+            <div class="surface-title">简历文件</div>
+            <div class="surface-subtitle">支持 PDF、Word 和常见图片格式</div>
+          </div>
+          <el-tag v-if="resumeUrl" type="success" effect="plain">已上传</el-tag>
+        </div>
+        <div class="pdf-viewer">
+          <el-upload
+            v-if="!resumeUrl"
+            name="resume_file"
+            class="upload-demo"
+            drag
+            :http-request="handleUploadResume"
+            :show-file-list="false"
+            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+          >
+            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+            <template #tip>
+              <div class="el-upload__tip">支持 pdf/doc/docx/png/jpg/jpeg 格式</div>
+            </template>
+          </el-upload>
+          <embed v-else :src="resumeUrl" type="application/pdf" width="100%" height="100%" />
+        </div>
       </div>
-      <div class="ocr-form">
-        <el-form :model="ocrResult" label-width="120px">
-          <el-form-item label="职位">
-            <el-select v-model="selectedPosition">
-              <el-option
-                v-for="position in positions"
-                :key="position.id"
-                :label="position.title"
-                :value="position.id"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="姓名">
-            <el-input v-model="ocrResult.name"></el-input>
-          </el-form-item>
-          <el-form-item label="性别">
-            <el-input v-model="ocrResult.gender"></el-input>
-          </el-form-item>
-          <el-form-item label="出生日期">
-            <el-input v-model="ocrResult.birthday"></el-input>
-          </el-form-item>
-          <el-form-item label="手机号">
-            <el-input v-model="ocrResult.phone_number"></el-input>
-          </el-form-item>
-          <el-form-item label="邮箱">
-            <el-input v-model="ocrResult.email"></el-input>
-          </el-form-item>
-          <el-form-item label="最高学历">
-            <el-input v-model="ocrResult.highest_education"></el-input>
-          </el-form-item>
-          <el-form-item label="教育经历">
-            <el-input type="textarea" v-model="ocrResult.education_experience" :rows="3"></el-input>
-          </el-form-item>
-          <el-form-item label="工作经历">
-            <el-input type="textarea" v-model="ocrResult.work_experience" :rows="4"></el-input>
-          </el-form-item>
-          <el-form-item label="项目经历">
-            <el-input type="textarea" v-model="ocrResult.project_experience" :rows="8"></el-input>
-          </el-form-item>
-          <el-form-item label="技能">
-            <el-input type="textarea" v-model="ocrResult.skills" :rows="3"></el-input>
-          </el-form-item>
-          <el-form-item label="自我评价">
-            <el-input type="textarea" v-model="ocrResult.self_evaluation" :rows="3"></el-input>
-          </el-form-item>
-          <el-form-item label="其他信息">
-            <el-input type="textarea" v-model="ocrResult.other_information" :rows="3"></el-input>
-          </el-form-item>
-          <el-form-item>
-            <div class="text-right">
-              <el-button type="primary" @click="createCandidateFunc">确定</el-button>
-            </div>
-          </el-form-item>
-        </el-form>
+
+      <div class="surface">
+        <div class="surface-header">
+          <div>
+            <div class="surface-title">候选人信息</div>
+            <div class="surface-subtitle">请检查解析内容后再提交</div>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="ocr-form">
+            <el-form :model="ocrResult" label-position="top">
+              <div class="grid gap-x-4 md:grid-cols-2">
+                <el-form-item label="职位">
+                  <el-select v-model="selectedPosition" class="w-full" placeholder="请选择职位">
+                    <el-option
+                      v-for="position in positions"
+                      :key="position.id"
+                      :label="position.title"
+                      :value="position.id"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="姓名">
+                  <el-input v-model="ocrResult.name"></el-input>
+                </el-form-item>
+                <el-form-item label="性别">
+                  <el-input v-model="ocrResult.gender"></el-input>
+                </el-form-item>
+                <el-form-item label="出生日期">
+                  <el-input v-model="ocrResult.birthday"></el-input>
+                </el-form-item>
+                <el-form-item label="手机号">
+                  <el-input v-model="ocrResult.phone_number"></el-input>
+                </el-form-item>
+                <el-form-item label="邮箱">
+                  <el-input v-model="ocrResult.email"></el-input>
+                </el-form-item>
+                <el-form-item label="最高学历">
+                  <el-input v-model="ocrResult.highest_education"></el-input>
+                </el-form-item>
+              </div>
+              <el-form-item label="教育经历">
+                <el-input
+                  type="textarea"
+                  v-model="ocrResult.education_experience"
+                  :rows="3"
+                ></el-input>
+              </el-form-item>
+              <el-form-item label="工作经历">
+                <el-input type="textarea" v-model="ocrResult.work_experience" :rows="4"></el-input>
+              </el-form-item>
+              <el-form-item label="项目经历">
+                <el-input
+                  type="textarea"
+                  v-model="ocrResult.project_experience"
+                  :rows="8"
+                ></el-input>
+              </el-form-item>
+              <el-form-item label="技能">
+                <el-input type="textarea" v-model="ocrResult.skills" :rows="3"></el-input>
+              </el-form-item>
+              <el-form-item label="自我评价">
+                <el-input type="textarea" v-model="ocrResult.self_evaluation" :rows="3"></el-input>
+              </el-form-item>
+              <el-form-item label="其他信息">
+                <el-input
+                  type="textarea"
+                  v-model="ocrResult.other_information"
+                  :rows="3"
+                ></el-input>
+              </el-form-item>
+              <el-form-item>
+                <div class="flex w-full justify-end">
+                  <el-button type="primary" :disabled="!resumeId" @click="createCandidateFunc">
+                    <el-icon><Check /></el-icon>
+                    创建候选人
+                  </el-button>
+                </div>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -91,7 +130,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type UploadRequestOptions } from 'element-plus'
-import { ArrowLeft, UploadFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, Check, UploadFilled } from '@element-plus/icons-vue'
 import fullLoading from '@/utils/fullLoading'
 import http from '@/apis/request'
 
@@ -163,7 +202,7 @@ const normalizeOcrResult = (ocrResp: ResumeOCRResult | null | undefined): Partia
 
 const fetchPositions = async (): Promise<void> => {
   try {
-    const resp = await getPositionList({ page: 1, size: 999 })
+    const resp = await getPositionList({ page: 1, size: 100 })
     positions.value = resp.positions
   } catch {
     ElMessage.error('获取职位列表失败')
@@ -248,24 +287,13 @@ const createCandidateFunc = async (): Promise<void> => {
 </script>
 
 <style scoped>
-.top-bar {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.content-area {
-  display: flex;
-  gap: 16px;
-}
-
 .pdf-viewer {
-  flex: 1;
-  border: 1px solid #ccc;
-  height: 80vh;
+  min-height: 680px;
+  height: calc(100vh - 228px);
   display: flex;
   justify-content: center;
   align-items: center;
+  background: #f8fafc;
 }
 
 .pdf-viewer .upload-demo {
@@ -288,30 +316,14 @@ const createCandidateFunc = async (): Promise<void> => {
 }
 
 .ocr-form {
-  flex: 1;
+  min-width: 0;
 }
 
 .back-link {
-  color: #909399;
+  color: #64748b;
 }
 
 .back-link:hover {
-  color: #606266;
-}
-
-.back-link {
-  color: #909399;
-}
-
-.back-link:hover {
-  color: #606266;
-}
-
-.back-link {
-  color: #909399;
-}
-
-.back-link:hover {
-  color: #606266;
+  color: #1d4ed8;
 }
 </style>

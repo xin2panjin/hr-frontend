@@ -1,5 +1,218 @@
 @import 'tailwindcss';
 
+@layer base {
+  :root {
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      'PingFang SC',
+      'Microsoft YaHei',
+      sans-serif;
+    color: #172033;
+    background: #f5f7fb;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  body {
+    @apply m-0 bg-[#f5f7fb] text-slate-800;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto flex w-full max-w-[1480px] flex-col gap-5;
+  }
+
+  .surface {
+    @apply rounded-lg border border-slate-200/80 bg-white shadow-sm;
+  }
+
+  .surface-header {
+    @apply flex flex-col gap-3 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between;
+  }
+
+  .surface-title {
+    @apply text-base font-semibold text-slate-900;
+  }
+
+  .surface-subtitle {
+    @apply mt-1 text-sm text-slate-500;
+  }
+
+  .stat-card {
+    @apply rounded-lg border border-slate-200/80 bg-white p-4 shadow-sm;
+  }
+
+  .icon-tile {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600;
+  }
+
+  .toolbar {
+    @apply flex flex-col gap-3 rounded-lg border border-slate-200/80 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between;
+  }
+
+  .filter-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .filter-fields {
+    @apply flex min-w-0 items-center gap-3;
+  }
+
+  .filter-control {
+    flex: 0 0 var(--filter-control-width, 160px);
+    width: var(--filter-control-width, 160px) !important;
+    min-width: 0;
+  }
+
+  .filter-control--keyword {
+    --filter-control-width: 160px;
+  }
+
+  .filter-control--wide {
+    --filter-control-width: 190px;
+  }
+
+  .filter-control--medium {
+    --filter-control-width: 140px;
+  }
+
+  .filter-control--short {
+    --filter-control-width: 104px;
+  }
+
+  .filter-control--year {
+    --filter-control-width: 80px;
+  }
+
+  .filter-control--date {
+    --filter-control-width: 220px;
+  }
+
+  .filter-check {
+    @apply flex min-h-8 items-center whitespace-nowrap px-1 text-sm;
+  }
+
+  .filter-actions {
+    @apply flex shrink-0 items-center gap-2;
+    justify-self: end;
+  }
+
+  .filter-actions .el-button {
+    @apply min-w-[68px];
+  }
+
+  .filter-bar--compact {
+    padding: 0;
+  }
+
+  .empty-hint {
+    @apply rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500;
+  }
+}
+
+@media (max-width: 1180px) {
+  .filter-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .filter-fields {
+    flex-wrap: wrap;
+  }
+
+  .filter-actions {
+    justify-self: end;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
 body {
-  @apply bg-gray-200 text-gray-800;
+  @apply bg-[#f5f7fb] text-slate-800;
+}
+
+.el-button {
+  --el-border-radius-base: 8px;
+  font-weight: 600;
+}
+
+.el-button--primary {
+  --el-button-bg-color: #2563eb;
+  --el-button-border-color: #2563eb;
+  --el-button-hover-bg-color: #1d4ed8;
+  --el-button-hover-border-color: #1d4ed8;
+  --el-button-active-bg-color: #1e40af;
+  --el-button-active-border-color: #1e40af;
+}
+
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper,
+.el-input-number .el-input__wrapper {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #dbe3ef inset;
+}
+
+.el-input__wrapper:hover,
+.el-textarea__inner:hover,
+.el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px #bfdbfe inset;
+}
+
+.el-table {
+  --el-table-header-bg-color: #f8fafc;
+  --el-table-header-text-color: #475569;
+  --el-table-row-hover-bg-color: #f8fbff;
+  border-radius: 8px;
+}
+
+.el-table th.el-table__cell {
+  font-weight: 700;
+}
+
+.el-table .cell {
+  line-height: 1.55;
+}
+
+.el-dialog {
+  border-radius: 8px;
+}
+
+.el-dialog__header {
+  margin-right: 0;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 16px;
+}
+
+.el-dialog__footer {
+  border-top: 1px solid #edf2f7;
+  padding-top: 16px;
 }
