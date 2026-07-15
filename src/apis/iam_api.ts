@@ -30,6 +30,8 @@ export const getUserRoles = (userId: string) => request.get<UserRole[]>(`/iam/us
 export const revokeRole = (id: string, reason: string) => request.delete(`/iam/user-roles/${id}`, { data: { reason } })
 export const replaceRoleScopes = (id: string, department_ids: string[]) => request.put(`/iam/user-roles/${id}/scopes/departments`, { department_ids })
 export const updateUserStatus = (userId: string, status: string) => request.patch(`/iam/users/${userId}/status`, { status })
+export const resetUserPassword = (userId: string, newPassword: string) => request.post(`/iam/users/${userId}/reset-password`, { new_password: newPassword })
+export const changeMyPassword = (data: { current_password: string; new_password: string }) => request.post('/iam/me/change-password', data)
 export const createDepartment = (data: { code: string; name: string; description?: string; parent_id?: string | null }) => request.post('/iam/departments', data)
 export const updateDepartment = (id: string, data: { code?: string; name?: string; description?: string; parent_id?: string | null }) => request.patch(`/iam/departments/${id}`, data)
 export const archiveDepartment = (id: string) => request.delete(`/iam/departments/${id}`)

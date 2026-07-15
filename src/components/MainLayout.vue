@@ -26,14 +26,6 @@
         </ul>
       </nav>
 
-      <div class="border-t border-white/10 p-4">
-        <div class="rounded-lg border border-white/10 bg-white/5 p-3">
-          <div class="text-xs text-slate-400">当前部门</div>
-          <div class="mt-1 truncate text-sm font-medium">
-            {{ userStore.user?.department?.name || '未设置部门' }}
-          </div>
-        </div>
-      </div>
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">
@@ -45,9 +37,20 @@
           <div class="text-xs text-slate-500">{{ currentRouteSubtitle }}</div>
         </div>
         <div class="flex items-center gap-3">
-          <el-button circle plain @click="goToSettings">
-            <el-icon><Setting /></el-icon>
-          </el-button>
+          <el-popover placement="bottom-end" :width="340" trigger="click">
+            <template #reference>
+              <el-tooltip content="系统消息" placement="bottom">
+                <el-button circle plain aria-label="系统消息">
+                  <el-icon><Bell /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span class="text-sm font-semibold text-slate-900">系统消息</span>
+              <span class="text-xs text-slate-400">暂无未读</span>
+            </div>
+            <el-empty :image-size="52" description="暂无系统消息" class="py-5" />
+          </el-popover>
           <el-dropdown>
             <span
               class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none"
@@ -70,8 +73,8 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item @click="goToSettings">
-                  <el-icon><Setting /></el-icon>
-                  <span>设置</span>
+                  <el-icon><UserFilled /></el-icon>
+                  <span>个人中心</span>
                 </el-dropdown-item>
                 <el-dropdown-item @click="handleLogout">
                   <el-icon><SwitchButton /></el-icon>
@@ -99,10 +102,14 @@ import {
   Postcard,
   User,
   ChatDotRound,
+  ChatLineRound,
+  Document,
   ArrowDown,
+  Bell,
   Setting,
   SwitchButton,
   Briefcase,
+  UserFilled,
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -120,6 +127,8 @@ const navItems = computed(() => {
       icon: ChatDotRound,
       visible: userStore.can('assistant.use'),
     },
+    { to: '/candidate-communications', label: '候选人沟通', icon: ChatLineRound, visible: userStore.can('candidate.communication.use') },
+    { to: '/knowledge', label: '制度知识库', icon: Document, visible: userStore.can('knowledge.document_manage') },
     { to: '/iam', label: '权限与安全', icon: Setting, visible: userStore.can('user.read') },
   ]
 
@@ -132,7 +141,9 @@ const routeMetaMap: Record<string, { title: string; subtitle: string }> = {
   candidates: { title: '候选人管理', subtitle: '跟进候选人状态和简历信息' },
   'candidates-add': { title: '添加候选人', subtitle: '上传简历并校对解析结果' },
   'hr-assistant': { title: 'HR 助手', subtitle: '用自然语言检索和对比候选人' },
-  settings: { title: '设置', subtitle: '管理账号绑定和个人配置' },
+  'candidate-communications': { title: '候选人沟通', subtitle: '查看候选人会话、AI 洞察与跟进待办' },
+  knowledge: { title: '制度知识库', subtitle: '上传制度文档并管理检索索引' },
+  settings: { title: '个人中心', subtitle: '查看基本资料和账号安全设置' },
   iam: { title: '组织与用户', subtitle: '在部门上下文中维护用户与角色授权' },
   'iam-roles': { title: '角色与权限', subtitle: '查看或调整角色的业务能力配置' },
   'iam-role-permissions': { title: '角色权限', subtitle: '查看角色可用的系统能力' },

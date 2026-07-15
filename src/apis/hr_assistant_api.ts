@@ -20,10 +20,25 @@ export interface HRAssistantCandidateCard {
   actions: HRAssistantCandidateAction[]
 }
 
+/** 制度知识来源；字段与后端 knowledge_sources artifact 保持一致。 */
+export interface HRAssistantKnowledgeSource {
+  source_id: string
+  document_id?: string | null
+  title?: string | null
+  version?: string | null
+  section_path?: string | null
+  page_number?: number | null
+  page_end?: number | null
+  score: number
+  content?: string | null
+  chunk_ids: string[]
+}
+
 export interface HRAssistantArtifact {
-  type: 'candidate_cards' | 'candidate_detail' | 'candidate_comparison'
+  type: 'candidate_cards' | 'candidate_detail' | 'candidate_comparison' | 'knowledge_sources'
   title: string
   candidates: HRAssistantCandidateCard[]
+  sources?: HRAssistantKnowledgeSource[]
   raw?: Record<string, unknown> | null
 }
 

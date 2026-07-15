@@ -89,6 +89,7 @@
                 <el-button v-if="can('user.update')" link type="primary" @click="openUserEdit(row)">编辑资料</el-button>
                 <el-button v-if="can('role.assign')" link type="primary" @click="openGrant(row)">授予角色</el-button>
                 <el-button v-if="can('role.read')" link type="primary" @click="openRoleManager(row)">角色与范围</el-button>
+                <el-button v-if="can('user.reset_password') && row.id !== store.user?.id" link type="warning" @click="openPasswordReset(row)">重置密码</el-button>
                 <el-button v-if="can('user.disable') && row.status === 'ACTIVE'" link type="danger" @click="changeStatus(row, 'BLOCKED')">停用</el-button>
                 <el-button v-else-if="can('user.disable') && row.status === 'BLOCKED'" link type="success" @click="changeStatus(row, 'ACTIVE')">启用</el-button>
               </template>
@@ -100,6 +101,15 @@
     </div>
 
     <el-dialog v-model="inviteVisible" title="创建用户" width="520px"><el-form :model="inviteForm" label-width="110px"><el-form-item label="用户名"><el-input v-model="inviteForm.username" placeholder="仅小写字母、数字、点、下划线或短横线" /></el-form-item><el-form-item label="邮箱"><el-input v-model="inviteForm.email" /></el-form-item><el-form-item label="主所属部门"><el-select v-model="inviteForm.department_id" class="w-full"><el-option v-for="dept in flatDepartments" :key="dept.id" :label="dept.name" :value="dept.id" /></el-select></el-form-item><el-form-item label="初始角色"><el-select v-model="inviteForm.role_code" class="w-full"><el-option v-for="role in roles" :key="role.code" :label="role.name" :value="role.code" /></el-select></el-form-item><el-form-item v-if="inviteForm.role_code === RECRUITER_ROLE_CODE" label="负责部门"><el-select v-model="inviteForm.department_scope_ids" multiple class="w-full"><el-option v-for="dept in flatDepartments" :key="dept.id" :label="dept.name" :value="dept.id" /></el-select></el-form-item><el-form-item label="授权说明"><el-input v-model="inviteForm.reason" /></el-form-item></el-form><template #footer><el-button @click="inviteVisible = false">取消</el-button><el-button type="primary" @click="submitInvite">创建并发送邀请</el-button></template></el-dialog>
+
+    <el-dialog v-model="passwordResetVisible" :title="`重置密码：${selectedUser?.realname || selectedUser?.username || ''}`" width="460px" @closed="resetPasswordForm">
+      <p class="mb-4 text-sm text-slate-500">重置后，该用户所有已登录设备将被退出。</p>
+      <el-form :model="passwordResetForm" label-width="100px">
+        <el-form-item label="新密码"><el-input v-model="passwordResetForm.newPassword" type="password" show-password autocomplete="new-password" /></el-form-item>
+        <el-form-item label="确认新密码"><el-input v-model="passwordResetForm.confirmPassword" type="password" show-password autocomplete="new-password" /></el-form-item>
+      </el-form>
+      <template #footer><el-button @click="passwordResetVisible = false">取消</el-button><el-button type="primary" @click="submitPasswordReset">确认重置</el-button></template>
+    </el-dialog>
 
     <el-dialog v-model="departmentVisible" :title="editingDepartment ? '编辑部门' : '新增部门'" width="480px"><el-form :model="departmentForm" label-width="100px"><el-form-item label="部门编码"><el-input v-model="departmentForm.code" placeholder="DEPT-HR-001" :disabled="Boolean(editingDepartment)" /></el-form-item><el-form-item label="部门名称"><el-input v-model="departmentForm.name" /></el-form-item><el-form-item label="上级部门"><el-select v-model="departmentForm.parent_id" clearable class="w-full" placeholder="不设置上级部门"><el-option v-for="dept in availableParents" :key="dept.id" :label="dept.name" :value="dept.id" /></el-select></el-form-item><el-form-item label="描述"><el-input v-model="departmentForm.description" type="textarea" :rows="3" /></el-form-item></el-form><template #footer><el-button @click="departmentVisible = false">取消</el-button><el-button type="primary" @click="submitDepartment">保存</el-button></template></el-dialog>
 
@@ -139,7 +149,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { archiveDepartment, createDepartment, createIamInvitation, DEPARTMENT_CODE_PATTERN, getAuditLogs, getDepartmentDependencies, getDepartmentSummary, getDepartmentTree, getIamRoles, getIamUsers, getUserRoles, grantRole, RECRUITER_ROLE_CODE, replaceRoleScopes, revokeRole, updateDepartment, updateUserProfile, updateUserStatus, type AuditLog, type DepartmentSummary, type IamDepartment, type IamDepartmentTreeNode, type IamRole, type IamUser, type UserRole } from '@/apis/iam_api'
+import { archiveDepartment, createDepartment, createIamInvitation, DEPARTMENT_CODE_PATTERN, getAuditLogs, getDepartmentDependencies, getDepartmentSummary, getDepartmentTree, getIamRoles, getIamUsers, getUserRoles, grantRole, RECRUITER_ROLE_CODE, replaceRoleScopes, resetUserPassword, revokeRole, updateDepartment, updateUserProfile, updateUserStatus, type AuditLog, type DepartmentSummary, type IamDepartment, type IamDepartmentTreeNode, type IamRole, type IamUser, type UserRole } from '@/apis/iam_api'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -162,6 +172,7 @@ const filters = reactive({ keyword: '', roleCode: '', status: '', includeDescend
 const inviteVisible = ref(false)
 const departmentVisible = ref(false)
 const grantVisible = ref(false)
+const passwordResetVisible = ref(false)
 const userEditVisible = ref(false)
 const roleManagerVisible = ref(false)
 const auditVisible = ref(false)
@@ -184,6 +195,7 @@ const inviteForm = reactive({ username: '', email: '', department_id: '', role_c
 const departmentForm = reactive({ code: '', name: '', description: '', parent_id: '' as string | null })
 const grantForm = reactive({ role_code: '', department_ids: [] as string[], reason: '' })
 const userForm = reactive({ realname: '', phone_number: '', department_id: '' })
+const passwordResetForm = reactive({ newPassword: '', confirmPassword: '' })
 
 const flatDepartments = computed<IamDepartment[]>(() => {
   const result: IamDepartment[] = []
@@ -284,6 +296,17 @@ const submitInvite = async () => {
   try { await createIamInvitation({ ...inviteForm, username: inviteForm.username.trim().toLowerCase() }); ElMessage.success('用户已创建，注册邀请已发送'); inviteVisible.value = false } catch { ElMessage.error('创建用户失败') }
 }
 const openGrant = (user: IamUser) => { selectedUser.value = user; Object.assign(grantForm, { role_code: '', department_ids: [], reason: '' }); grantVisible.value = true }
+const resetPasswordForm = () => Object.assign(passwordResetForm, { newPassword: '', confirmPassword: '' })
+const openPasswordReset = (user: IamUser) => { selectedUser.value = user; resetPasswordForm(); passwordResetVisible.value = true }
+const submitPasswordReset = async () => {
+  if (!selectedUser.value || passwordResetForm.newPassword.length < 12) return ElMessage.warning('新密码至少需要 12 位')
+  if (passwordResetForm.newPassword !== passwordResetForm.confirmPassword) return ElMessage.warning('两次输入的新密码不一致')
+  try {
+    await resetUserPassword(selectedUser.value.id, passwordResetForm.newPassword)
+    ElMessage.success('密码已重置，该用户需要使用新密码重新登录')
+    passwordResetVisible.value = false
+  } catch { ElMessage.error('密码重置失败，请检查密码是否符合安全规则') }
+}
 const submitGrant = async () => {
   if (!selectedUser.value || !grantForm.role_code || (grantForm.role_code === RECRUITER_ROLE_CODE && !grantForm.department_ids.length)) return ElMessage.warning('请完成角色和范围配置')
   try { await grantRole(selectedUser.value.id, grantForm); ElMessage.success('角色已授予'); grantVisible.value = false; await loadUsers() } catch { ElMessage.error('角色授予失败') }

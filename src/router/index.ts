@@ -14,6 +14,8 @@ const router = createRouter({
       name: 'register',
       component: () => import('@/pages/register/index.vue'),
     },
+    { path: '/candidate-portal/login', name: 'candidate-portal-login', component: () => import('@/pages/candidate-portal/login.vue'), meta: { public: true } },
+    { path: '/candidate-portal', name: 'candidate-portal', component: () => import('@/pages/candidate-portal/index.vue'), meta: { candidatePortal: true } },
     {
       path: '/',
       component: () => import('@/components/MainLayout.vue'),
@@ -40,6 +42,8 @@ const router = createRouter({
           component: () => import('@/pages/hr-assistant/index.vue'),
           meta: { permissions: ['assistant.use'] },
         },
+        { path: 'candidate-communications', name: 'candidate-communications', component: () => import('@/pages/candidate-communications/index.vue'), meta: { permissions: ['candidate.communication.use'] } },
+        { path: 'knowledge', name: 'knowledge', component: () => import('@/pages/knowledge/index.vue'), meta: { permissions: ['knowledge.document_manage'] } },
         {
           path: 'candidates/add',
           name: 'candidates-add',
@@ -80,6 +84,10 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  if (to.matched.some((record) => record.meta.public)) return true
+  if (to.matched.some((record) => record.meta.candidatePortal)) {
+    return localStorage.getItem('candidatePortalAccessToken') ? true : { name: 'candidate-portal-login' }
+  }
   const userStore = useUserStore()
   const required = to.matched.flatMap((record) => (record.meta.permissions as string[] | undefined) || [])
   if (

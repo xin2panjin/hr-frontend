@@ -223,6 +223,56 @@
                   </div>
                 </div>
 
+                <div v-else-if="artifact.type === 'knowledge_sources'" class="space-y-3">
+                  <div
+                    v-for="source in artifact.sources || []"
+                    :key="`${artifact.type}-${source.source_id}`"
+                    class="rounded-lg border border-blue-100 bg-white p-4 shadow-sm"
+                  >
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div class="font-semibold text-slate-950">
+                          {{ source.title || '制度文档' }}
+                        </div>
+                        <div class="mt-1 text-sm text-slate-500">
+                          {{ source.section_path || '未标注章节' }}
+                        </div>
+                      </div>
+                      <el-tag type="primary" effect="plain">
+                        相关性 {{ formatScore(source.score) }}
+                      </el-tag>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                      <el-tag v-if="source.version" size="small" effect="plain">
+                        版本 {{ source.version }}
+                      </el-tag>
+                      <el-tag v-if="source.page_number" size="small" effect="plain">
+                        第 {{ source.page_number }}<span v-if="source.page_end && source.page_end !== source.page_number">-{{ source.page_end }}</span> 页
+                      </el-tag>
+                      <span v-if="source.document_id" class="rounded bg-slate-100 px-2 py-1">
+                        文档 {{ source.document_id }}
+                      </span>
+                    </div>
+
+                    <details v-if="source.content" class="mt-3 rounded-md bg-slate-50 p-3">
+                      <summary class="cursor-pointer text-sm font-medium text-blue-700">
+                        查看证据正文
+                      </summary>
+                      <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                        {{ source.content }}
+                      </p>
+                    </details>
+                  </div>
+
+                  <div
+                    v-if="!artifact.sources?.length"
+                    class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700"
+                  >
+                    当前知识库未检索到相关制度依据，请向 HR 或制度管理员确认。
+                  </div>
+                </div>
+
                 <div v-else class="grid gap-3">
                   <div
                     v-for="candidate in artifact.candidates"
@@ -357,6 +407,8 @@
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ChatLineRound, Close, MoreFilled, Plus, Promotion, Search } from '@element-plus/icons-vue'
+import DOMPurify from 'dompurify'
+import MarkdownIt from 'markdown-it'
 import {
   createHRAssistantConversation,
   deleteHRAssistantConversation,
@@ -407,114 +459,14 @@ const currentConversation = computed(() => {
 
 const createMessageId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`
 
-const escapeHtml = (content: string) => {
-  return content
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
+const markdownRenderer = new MarkdownIt({
+  // 助手输出不应被当作可执行 HTML；渲染结果仍须经 DOMPurify 再净化后才写入 v-html。
+  html: false,
+  linkify: true,
+  breaks: true,
+})
 
-const renderInlineMarkdown = (content: string) => {
-  return escapeHtml(content)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-}
-
-const renderMarkdown = (content: string) => {
-  const lines = content.split('\n')
-  const html: string[] = []
-  let listType: 'ul' | 'ol' | null = null
-  let inCodeBlock = false
-  const codeBlockLines: string[] = []
-
-  const closeList = () => {
-    if (listType) {
-      html.push(`</${listType}>`)
-      listType = null
-    }
-  }
-
-  const openList = (type: 'ul' | 'ol') => {
-    if (listType === type) return
-    closeList()
-    listType = type
-    html.push(`<${type}>`)
-  }
-
-  const closeCodeBlock = () => {
-    html.push(`<pre><code>${escapeHtml(codeBlockLines.join('\n'))}</code></pre>`)
-    codeBlockLines.length = 0
-    inCodeBlock = false
-  }
-
-  for (const line of lines) {
-    const trimmedLine = line.trim()
-
-    if (trimmedLine.startsWith('```')) {
-      closeList()
-      if (inCodeBlock) {
-        closeCodeBlock()
-      } else {
-        inCodeBlock = true
-      }
-      continue
-    }
-
-    if (inCodeBlock) {
-      codeBlockLines.push(line)
-      continue
-    }
-
-    if (!trimmedLine) {
-      closeList()
-      continue
-    }
-
-    if (trimmedLine.startsWith('### ')) {
-      closeList()
-      html.push(`<h3>${renderInlineMarkdown(trimmedLine.slice(4))}</h3>`)
-      continue
-    }
-
-    if (trimmedLine.startsWith('## ')) {
-      closeList()
-      html.push(`<h2>${renderInlineMarkdown(trimmedLine.slice(3))}</h2>`)
-      continue
-    }
-
-    if (trimmedLine.startsWith('# ')) {
-      closeList()
-      html.push(`<h1>${renderInlineMarkdown(trimmedLine.slice(2))}</h1>`)
-      continue
-    }
-
-    const orderedListMatch = trimmedLine.match(/^\d+\.\s+(.+)$/)
-    if (orderedListMatch) {
-      openList('ol')
-      html.push(`<li>${renderInlineMarkdown(orderedListMatch[1] ?? '')}</li>`)
-      continue
-    }
-
-    const unorderedListMatch = trimmedLine.match(/^[-*]\s+(.+)$/)
-    if (unorderedListMatch) {
-      openList('ul')
-      html.push(`<li>${renderInlineMarkdown(unorderedListMatch[1] ?? '')}</li>`)
-      continue
-    }
-
-    closeList()
-    html.push(`<p>${renderInlineMarkdown(trimmedLine)}</p>`)
-  }
-
-  closeList()
-  if (inCodeBlock) {
-    closeCodeBlock()
-  }
-
-  return html.join('')
-}
+const renderMarkdown = (content: string) => DOMPurify.sanitize(markdownRenderer.render(content))
 
 const asRecord = (value: unknown): Record<string, any> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -584,6 +536,8 @@ const getArtifactTypeLabel = (type: HRAssistantArtifact['type']) => {
       return '详情'
     case 'candidate_comparison':
       return '候选人对比'
+    case 'knowledge_sources':
+      return '制度来源'
     default:
       return '搜索结果'
   }
@@ -983,6 +937,41 @@ onMounted(() => {
   background: transparent;
   padding: 0;
   color: #e5e7eb;
+}
+
+.markdown-body :deep(hr) {
+  margin: 0.85rem 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.markdown-body :deep(table) {
+  display: block;
+  width: 100%;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  min-width: 9rem;
+  border: 1px solid #e2e8f0;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-body :deep(th) {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+}
+
+.markdown-body :deep(tbody tr:nth-child(even)) {
+  background: #f8fafc;
 }
 
 .comparison-table {

@@ -15,8 +15,10 @@
     "@element-plus/icons-vue": "^2.3.2",
     "@tailwindcss/vite": "^4.2.1",
     "axios": "^1.13.5",
+    "dompurify": "^3.4.12",
     "echarts": "^6.0.0",
     "element-plus": "^2.13.2",
+    "markdown-it": "^14.3.0",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.2.1",
     "vue": "^3.5.29",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.10.13",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vue/tsconfig": "^0.8.1",
